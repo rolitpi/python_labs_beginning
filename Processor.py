@@ -1,6 +1,7 @@
 from typing import Any
 
 import pandas as pd
+import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -17,6 +18,7 @@ class Processor:
     __AFTER_NOON_HOURS = [f'{i:>02}' for i in range(13, 24)]
 
     __loaded_df: DataFrame
+    __melted_loaded_df: DataFrame
     __max_temps: TempComparingUnit
     __min_temps: TempComparingUnit
     __mean_temps: TempComparingUnit
@@ -28,12 +30,25 @@ class Processor:
         def_col_names = [self.__DEFAULT_DF_INDEX_NAME] + self.__BEFORE_NOON_HOURS + self.__AFTER_NOON_HOURS
         df = df.set_axis(def_col_names, axis=1, copy=False)
 
-        df = df.groupby(pd.Grouper(key=self.__DEFAULT_DF_INDEX_NAME, freq='M'))
+        self.__melted_loaded_df = df[self.__BEFORE_NOON_HOURS + self.__AFTER_NOON_HOURS].melt()['value']
+        self.__loaded_df = df.groupby(pd.Grouper(key=self.__DEFAULT_DF_INDEX_NAME, freq='M'))
 
-        df.plot(legend=True)
+    def build_plots(self) -> None:
+        color = 'red'
+        fig, axes = plt.subplots(nrows=2, figsize=(10, 10))
+        self.__melted_loaded_df.plot(ax=axes[0], kind='kde', grid=True, color=color)
+
+        intervals = [i for i in range(int(self.__melted_loaded_df.min()),
+                                      int(self.__melted_loaded_df.max()))]
+        plt.xticks(intervals)
+        y, edges, _ = plt.hist(self.__melted_loaded_df, histtype='step', bins=intervals)
+        midpoints = 0.5 * (edges[1:]+edges[:-1])
+        plt.plot(midpoints, y)
+
+        fig.tight_layout()
         plt.show()
-
-        self.__loaded_df = df
+        print(f"Мода: {self.__melted_loaded_df.mode()}")
+        print(self.__melted_loaded_df.agg(['mean', 'std']).round(decimals=2))
 
     def calculate(self) -> None:
         self.__max_temps = self.__get_max_temps()

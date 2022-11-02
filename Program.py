@@ -12,5 +12,6 @@ TASKS_INPUT_ARR = [
 
 proc = Processor()
 proc.load_df(FILE_NAME)
-proc.calculate()
-proc.print(TASKS_INPUT_ARR)
+# proc.calculate()
+# proc.print(TASKS_INPUT_ARR)
+proc.build_plots()
